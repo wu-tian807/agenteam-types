@@ -13,7 +13,7 @@ if [ ! -f "$SCRIPT" ]; then
   exit 0
 fi
 
-"$SCRIPT" --apply
+node "$SCRIPT" --apply
 
 # Stage package.json if it changed (the hook doesn't auto-stage by default)
 git add "$ROOT_DIR/package.json"

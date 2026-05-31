@@ -188,13 +188,15 @@ export type ProvisioningPhase =
   | "initializing_sandbox"
   | "rebuilding_image"
   | "configuring_team"
+  | "creating_container"
   | "starting_container";
 
 export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   scaffolding:          "正在初始化项目结构...",
   initializing_sandbox: "正在初始化沙箱环境...",
   rebuilding_image:     "正在构建 Docker 镜像（可能需要几分钟）...",
-  configuring_team:     "正在配置团队运行时...",
+  configuring_team:     "正在配置 Team 目录...",
+  creating_container:   "正在创建容器...",
   starting_container:   "正在启动容器...",
 };
 
