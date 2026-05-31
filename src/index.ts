@@ -17,6 +17,12 @@ export * from "./content-utils.js";
 // ─── Slash-command parser ───
 export * from "./command-parser.js";
 
+// ─── LLM message-shape protocol types ───
+export * from "./llm.js";
+
+// ─── Thinking/text extraction helpers ───
+export * from "./thinking.js";
+
 // ─── Lifecycle hooks ───
 export * from "./hooks.js";
 
