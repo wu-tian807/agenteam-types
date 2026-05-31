@@ -28,20 +28,6 @@ function git(...args) {
   }
 }
 
-function resolveBaseVersion() {
-  const tag = git("describe", "--tags", "--abbrev=0");
-  if (tag) {
-    const ver = tag.replace(/^v/, "");
-    if (/^\d+\.\d+\.\d+$/.test(ver)) return ver;
-  }
-  try {
-    const pkg = JSON.parse(readFileSync(PKG_PATH, "utf-8"));
-    return pkg.version ?? "0.0.0";
-  } catch {
-    return "0.0.0";
-  }
-}
-
 function buildVersion() {
   // Use the highest semver tag available (works in shallow clones where
   // git describe only finds the nearest ancestor tag, not the true latest).

@@ -1,6 +1,6 @@
 {
   "name": "@agenteam/types",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Shared protocol types and utilities for agenteam ecosystem (engine ↔ channels)",
   "type": "module",
   "main": "./src/index.ts",
