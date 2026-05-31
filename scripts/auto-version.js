@@ -43,20 +43,27 @@ function resolveBaseVersion() {
 }
 
 function buildVersion() {
-  const tag = git("describe", "--tags", "--abbrev=0");
-  if (!tag) {
+  // Use the highest semver tag available (works in shallow clones where
+  // git describe only finds the nearest ancestor tag, not the true latest).
+  const allTags = git("tag", "--sort=-version:refname", "--list", "v*");
+  const latestTag = allTags?.split("\n").find(t => /^v\d+\.\d+\.\d+$/.test(t.trim()))?.trim();
+
+  if (!latestTag) {
     const pkg = JSON.parse(readFileSync(PKG_PATH, "utf-8"));
     return pkg.version ?? "0.0.0";
   }
 
-  const base = resolveBaseVersion();
-  const count = git("rev-list", "--count", `${tag}..HEAD`);
+  const base = latestTag.replace(/^v/, "");
+
+  // Count commits reachable from HEAD but not from the latest tag.
+  // In shallow clones the tag commit may not be an ancestor of HEAD —
+  // fall back to 0 (i.e. just use the tag's version) in that case.
+  const count = git("rev-list", "--count", `${latestTag}..HEAD`);
   const n = count !== null ? parseInt(count, 10) : 0;
   if (n === 0) return base;
 
-  // Bump patch: v0.1.0 + 3 commits → 0.1.3
-  const [major, minor] = base.split(".").map(Number);
-  return `${major}.${minor}.${n}`;
+  const [major, minor, patch] = base.split(".").map(Number);
+  return `${major}.${minor}.${patch + n}`;
 }
 
 function applyVersion(version) {
