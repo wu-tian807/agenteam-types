@@ -20,7 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const PKG_PATH = resolve(ROOT, "package.json");
 
-function git(...args: string[]): string | null {
+function git(...args) {
   try {
     return execSync(`git ${args.join(" ")}`, { cwd: ROOT, encoding: "utf-8", timeout: 5000 }).trim();
   } catch {
@@ -28,8 +28,7 @@ function git(...args: string[]): string | null {
   }
 }
 
-/** Resolve base version from latest tag, fallback to package.json. */
-function resolveBaseVersion(): string {
+function resolveBaseVersion() {
   const tag = git("describe", "--tags", "--abbrev=0");
   if (tag) {
     const ver = tag.replace(/^v/, "");
@@ -43,10 +42,9 @@ function resolveBaseVersion(): string {
   }
 }
 
-function buildVersion(): string {
+function buildVersion() {
   const tag = git("describe", "--tags", "--abbrev=0");
   if (!tag) {
-    // No tags — use package.json as-is
     const pkg = JSON.parse(readFileSync(PKG_PATH, "utf-8"));
     return pkg.version ?? "0.0.0";
   }
@@ -61,10 +59,10 @@ function buildVersion(): string {
   return `${major}.${minor}.${n}`;
 }
 
-function applyVersion(version: string): boolean {
+function applyVersion(version) {
   const raw = readFileSync(PKG_PATH, "utf-8");
   const pkg = JSON.parse(raw);
-  if (pkg.version === version) return false;  // unchanged
+  if (pkg.version === version) return false;
   pkg.version = version;
   writeFileSync(PKG_PATH, JSON.stringify(pkg, null, 2) + "\n");
   return true;
