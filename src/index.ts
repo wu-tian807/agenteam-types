@@ -14,6 +14,9 @@ export * from "./types.js";
 // ─── Content utilities ───
 export * from "./content-utils.js";
 
+// ─── Slash-command parser ───
+export * from "./command-parser.js";
+
 // ─── Lifecycle hooks ───
 export * from "./hooks.js";
 
