@@ -1,0 +1,19 @@
+#!/bin/sh
+# @desc Pre-commit hook: auto-version before each commit.
+#   Runs auto-version.js --apply to bump patch number,
+#   then stages package.json so the version change is part of the commit.
+
+set -e
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+SCRIPT="$ROOT_DIR/scripts/auto-version.js"
+
+if [ ! -f "$SCRIPT" ]; then
+  echo "[pre-commit] auto-version.js not found, skipping version bump"
+  exit 0
+fi
+
+"$SCRIPT" --apply
+
+# Stage package.json if it changed (the hook doesn't auto-stage by default)
+git add "$ROOT_DIR/package.json"
