@@ -21,6 +21,9 @@
     "node": ">=22"
   },
   "dependencies": {},
+  "scripts": {
+    "version": "node scripts/auto-version.js --apply"
+  },
   "peerDependencies": {
     "ws": ">=8"
   }
