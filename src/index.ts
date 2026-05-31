@@ -14,6 +14,9 @@ export * from "./types.js";
 // ─── Content utilities ───
 export * from "./content-utils.js";
 
+// ─── Lifecycle hooks ───
+export * from "./hooks.js";
+
 // ─── Shared path utilities ───
 export * from "./state-dir.js";
 
