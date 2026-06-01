@@ -25,6 +25,11 @@ export const Hook = {
   LLMRetry:         "hook:llmRetry",
   SessionChange:    "hook:sessionChange",
 
+  AssembleTools:    "hook:assemble_tools",
+  AssembleSlots:    "hook:assemble_slots",
+  PluginStart:      "hook:plugin_start",
+  PluginStop:       "hook:plugin_stop",
+
   AgentAttach:      "hook:agentAttach",
   AgentDetach:      "hook:agentDetach",
   AgentCreate:      "hook:agentCreate",
