@@ -15,7 +15,7 @@ import { request as httpRequest } from "node:http";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { INSTANCE_STATUS_PENDING, INSTANCE_STATUS_TERMINAL, PROVISIONING_PHASE_LABEL } from "./types.js";
-import type { ProvisioningPhase, InstanceStatus } from "./types.js";
+import type { ProvisioningPhase, InstanceStatus, ContainerStatus } from "./types.js";
 
 // ─── Types ───
 
@@ -30,6 +30,9 @@ export interface InstanceInfo {
   status: InstanceStatus;
   statusMessage?: string;
   provisioningPhase?: ProvisioningPhase;
+  // Forward-looking placeholder for the (soon to be decoupled) sandbox/workspace
+  // container lifecycle. Not populated yet — see ContainerStatus in types.ts.
+  containerStatus?: ContainerStatus;
 }
 
 export type ResolveResult =

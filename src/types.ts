@@ -207,6 +207,24 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   starting_container:   "正在启动容器...",
 };
 
+// ── Container status (forward-looking, decoupled dimension) ──
+//
+// The sandbox/workspace container has its own lifecycle that is *orthogonal* to
+// the instance lifecycle (`InstanceStatus`): per docs/draft/workspace-docker-
+// decoupling.md the container will eventually be gateway-managed and shared
+// N:1 across instances, so it cannot be expressed as a single instance state.
+//
+// This type stakes out that separate dimension ahead of the refactor. For now
+// it is a placeholder slot (`InstanceInfo.containerStatus`) — nothing populates
+// or reads it yet; the container/team provisioning is still surfaced through the
+// instance-level `"provisioning"` status. The migration (worker → containerStatus,
+// then removing instance-level `"provisioning"`) is a later phase.
+//
+//   - "provisioning": container is being built / created / started
+//   - "running":      container is up and usable
+//   - "stopping":     container is being torn down
+export type ContainerStatus = "stopping" | "provisioning" | "running";
+
 // Instance-lifecycle transient states — the *instance itself* is coming up, so
 // it's worth waiting for / routing to. `provisioning` is deliberately NOT here:
 // it describes the container/team runtime (an external resource that happens to
