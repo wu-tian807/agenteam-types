@@ -97,6 +97,7 @@ export async function listInstances(conn: ConnInfo): Promise<InstanceInfo[]> {
 
 const STATUS_NOTE: Record<string, string> = {
   idle: "空闲中 (无 team)",
+  preparing: "正在准备实例 (clone / 装依赖)...",
   provisioning: "正在初始化基础设施...",
   starting: "正在启动 agents...",
   stopping: "正在停止...",
