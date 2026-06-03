@@ -173,16 +173,17 @@ export interface AgentTreeNode {
 
 // ─── Instance Status ───
 
+// Instance lifecycle ONLY. The sandbox/workspace container is a separate state
+// machine (`ContainerStatus`) — container/team provisioning is no longer an
+// instance status; the instance is simply `starting` while its container comes
+// up, and `running` once its scheduler is live (the container may still be
+// provisioning underneath — see ContainerStatus / docs/draft decoupling).
 export type InstanceStatus =
   | "idle"
   // Instance-env provisioning: git clone + pnpm install, owned by the gateway
   // BEFORE the worker is forked. The instance does not exist as a runnable
   // process yet, so the picker must NOT let the user "enter" it.
   | "preparing"
-  // Container/team-runtime provisioning: sandbox + image + container + team
-  // setup, reported by the worker (carries a `provisioningPhase`). The worker
-  // exists and is coming up, so the picker DOES allow entering to watch it.
-  | "provisioning"
   | "starting"
   | "running"
   | "stopping"
@@ -207,29 +208,27 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   starting_container:   "正在启动容器...",
 };
 
-// ── Container status (forward-looking, decoupled dimension) ──
+// ── Container status (separate, decoupled state machine) ──
 //
 // The sandbox/workspace container has its own lifecycle that is *orthogonal* to
 // the instance lifecycle (`InstanceStatus`): per docs/draft/workspace-docker-
 // decoupling.md the container will eventually be gateway-managed and shared
 // N:1 across instances, so it cannot be expressed as a single instance state.
 //
-// This type stakes out that separate dimension ahead of the refactor. For now
-// it is a placeholder slot (`InstanceInfo.containerStatus`) — nothing populates
-// or reads it yet; the container/team provisioning is still surfaced through the
-// instance-level `"provisioning"` status. The migration (worker → containerStatus,
-// then removing instance-level `"provisioning"`) is a later phase.
+// The worker reports this dimension while the container is being built/recovered
+// (carrying a `provisioningPhase`). A container can be `provisioning` while its
+// instance is merely `starting` (initial boot) OR already `running` (a live
+// instance recovering/rebuilding its container) — UIs combine the two machines
+// via `displayStatus` / `isInstanceSelectable` below.
 //
 //   - "provisioning": container is being built / created / started
 //   - "running":      container is up and usable
-//   - "stopping":     container is being torn down
-export type ContainerStatus = "stopping" | "provisioning" | "running";
+//   - "stopped":      container is not running (torn down / never started)
+export type ContainerStatus = "provisioning" | "running" | "stopped";
 
 // Instance-lifecycle transient states — the *instance itself* is coming up, so
-// it's worth waiting for / routing to. `provisioning` is deliberately NOT here:
-// it describes the container/team runtime (an external resource that happens to
-// be reported through the instance status channel for now) rather than the
-// instance lifecycle, and is slated to be decoupled from InstanceStatus.
+// it's worth waiting for / routing to. Container provisioning is intentionally
+// absent: it lives on the separate `ContainerStatus` machine, not here.
 export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "starting"]);
 
 export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "unloaded"]);
