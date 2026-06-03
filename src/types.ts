@@ -207,7 +207,12 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   starting_container:   "正在启动容器...",
 };
 
-export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "provisioning", "starting"]);
+// Instance-lifecycle transient states — the *instance itself* is coming up, so
+// it's worth waiting for / routing to. `provisioning` is deliberately NOT here:
+// it describes the container/team runtime (an external resource that happens to
+// be reported through the instance status channel for now) rather than the
+// instance lifecycle, and is slated to be decoupled from InstanceStatus.
+export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "starting"]);
 
 export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "unloaded"]);
 
