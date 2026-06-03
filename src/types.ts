@@ -175,6 +175,13 @@ export interface AgentTreeNode {
 
 export type InstanceStatus =
   | "idle"
+  // Instance-env provisioning: git clone + pnpm install, owned by the gateway
+  // BEFORE the worker is forked. The instance does not exist as a runnable
+  // process yet, so the picker must NOT let the user "enter" it.
+  | "preparing"
+  // Container/team-runtime provisioning: sandbox + image + container + team
+  // setup, reported by the worker (carries a `provisioningPhase`). The worker
+  // exists and is coming up, so the picker DOES allow entering to watch it.
   | "provisioning"
   | "starting"
   | "running"
@@ -200,7 +207,7 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   starting_container:   "正在启动容器...",
 };
 
-export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "provisioning", "starting"]);
+export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "provisioning", "starting"]);
 
 export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "unloaded"]);
 
