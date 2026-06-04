@@ -25,15 +25,25 @@ export interface ConnInfo {
   port: number;
 }
 
+/**
+ * Sandbox/workspace container state machine — a separate dimension from the
+ * instance lifecycle (see ContainerStatus). Grouped into its own object so the
+ * two machines stay structurally distinct; `displayStatus` merges them only for
+ * rendering. Absent when the instance has no live container info (e.g. unloaded).
+ */
+export interface ContainerInfo {
+  status: ContainerStatus;
+  /** Sub-phase while `status === "provisioning"` (image build / container create / ...). */
+  provisioningPhase?: ProvisioningPhase;
+}
+
 export interface InstanceInfo {
   id: string;
+  // ── Instance state machine ──
   status: InstanceStatus;
   statusMessage?: string;
-  // `provisioningPhase` now describes the *container* provisioning step (it is
-  // reported alongside `containerStatus`, not the instance status).
-  provisioningPhase?: ProvisioningPhase;
-  // Separate sandbox/workspace container state machine — see ContainerStatus.
-  containerStatus?: ContainerStatus;
+  // ── Container state machine (separate dimension) ──
+  container?: ContainerInfo;
 }
 
 export type ResolveResult =
@@ -99,16 +109,27 @@ export async function listInstances(conn: ConnInfo): Promise<InstanceInfo[]> {
   return arr as InstanceInfo[];
 }
 
-const STATUS_NOTE: Record<string, string> = {
+// Note tables, kept separate per state machine (the two are only combined at
+// render time, never in their definitions).
+const INSTANCE_STATUS_NOTE: Record<InstanceStatus, string> = {
   idle: "空闲中 (无 team)",
   preparing: "正在准备实例 (clone / 装依赖)...",
-  provisioning: "正在初始化基础设施...",
   starting: "正在启动 agents...",
+  running: "运行中",
   stopping: "正在停止...",
   restarting: "正在重启...",
   error: "初始化失败",
   unloaded: "未加载",
 };
+
+const CONTAINER_STATUS_NOTE: Record<ContainerStatus, string> = {
+  provisioning: "正在初始化基础设施...",
+  running: "容器就绪",
+  stopped: "容器已停止",
+};
+
+// Shared input shape: just the two state machines.
+type InstanceView = { status: InstanceStatus; container?: ContainerInfo };
 
 /**
  * The instance and its sandbox/workspace container are two separate state
@@ -122,10 +143,8 @@ const STATUS_NOTE: Record<string, string> = {
  */
 export type DisplayStatus = InstanceStatus | "provisioning";
 
-export function displayStatus(
-  inst: { status: InstanceStatus; containerStatus?: ContainerStatus },
-): DisplayStatus {
-  if (inst.status === "running" && inst.containerStatus === "provisioning") return "provisioning";
+export function displayStatus(inst: InstanceView): DisplayStatus {
+  if (inst.status === "running" && inst.container?.status === "provisioning") return "provisioning";
   return inst.status;
 }
 
@@ -136,22 +155,19 @@ export function displayStatus(
  * progress. Everything else (preparing/starting-without-container/stopping/
  * restarting/error/unloaded) is a disabled row.
  */
-export function isInstanceSelectable(
-  inst: { status: InstanceStatus; containerStatus?: ContainerStatus },
-): boolean {
+export function isInstanceSelectable(inst: InstanceView): boolean {
   if (inst.status === "running" || inst.status === "idle") return true;
-  if (inst.containerStatus === "provisioning") return true;
+  if (inst.container?.status === "provisioning") return true;
   return false;
 }
 
 function instanceStatusNote(inst: InstanceInfo): string {
   if (displayStatus(inst) === "provisioning") {
-    if (inst.provisioningPhase) {
-      return PROVISIONING_PHASE_LABEL[inst.provisioningPhase as ProvisioningPhase] ?? STATUS_NOTE.provisioning;
-    }
-    return STATUS_NOTE.provisioning;
+    const phase = inst.container?.provisioningPhase;
+    if (phase) return PROVISIONING_PHASE_LABEL[phase] ?? CONTAINER_STATUS_NOTE.provisioning;
+    return CONTAINER_STATUS_NOTE.provisioning;
   }
-  return STATUS_NOTE[inst.status] ?? `状态: ${inst.status}`;
+  return INSTANCE_STATUS_NOTE[inst.status] ?? `状态: ${inst.status}`;
 }
 
 /**
