@@ -149,16 +149,18 @@ export function displayStatus(inst: InstanceView): DisplayStatus {
 }
 
 /**
- * Whether the picker may "enter" an instance (open the chat view). running/idle
- * are always enterable; additionally a container that is `provisioning` (initial
- * boot OR a rebuild under a running instance) is enterable so the user can watch
- * progress. Everything else (preparing/starting-without-container/stopping/
- * restarting/error/unloaded) is a disabled row.
+ * Whether the picker may "enter" an instance. Only a live scheduler is
+ * enterable:
+ *   - `running`: interactable (if its container is rebuilding underneath, it is
+ *     still running, so still enterable — no separate container clause needed).
+ *   - `idle`: selecting it routes to the team/pack picker branch.
+ * Container `provisioning` is deliberately NOT a selectability factor on its
+ * own: during initial boot the instance is `starting` (scheduler down) and must
+ * stay non-enterable. Everything else (preparing/starting/stopping/restarting/
+ * error/unloaded) is a disabled row.
  */
-export function isInstanceSelectable(inst: InstanceView): boolean {
-  if (inst.status === "running" || inst.status === "idle") return true;
-  if (inst.container?.status === "provisioning") return true;
-  return false;
+export function isInstanceSelectable(inst: { status: InstanceStatus }): boolean {
+  return inst.status === "running" || inst.status === "idle";
 }
 
 function instanceStatusNote(inst: InstanceInfo): string {
