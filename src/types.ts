@@ -173,9 +173,17 @@ export interface AgentTreeNode {
 
 // ─── Instance Status ───
 
+// Instance lifecycle ONLY. The sandbox/workspace container is a separate state
+// machine (`ContainerStatus`) — container/team provisioning is no longer an
+// instance status; the instance is simply `starting` while its container comes
+// up, and `running` once its scheduler is live (the container may still be
+// provisioning underneath — see ContainerStatus / docs/draft decoupling).
 export type InstanceStatus =
   | "idle"
-  | "provisioning"
+  // Instance-env provisioning: git clone + pnpm install, owned by the gateway
+  // BEFORE the worker is forked. The instance does not exist as a runnable
+  // process yet, so the picker must NOT let the user "enter" it.
+  | "preparing"
   | "starting"
   | "running"
   | "stopping"
@@ -200,7 +208,28 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
   starting_container:   "正在启动容器...",
 };
 
-export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "provisioning", "starting"]);
+// ── Container status (separate, decoupled state machine) ──
+//
+// The sandbox/workspace container has its own lifecycle that is *orthogonal* to
+// the instance lifecycle (`InstanceStatus`): per docs/draft/workspace-docker-
+// decoupling.md the container will eventually be gateway-managed and shared
+// N:1 across instances, so it cannot be expressed as a single instance state.
+//
+// The worker reports this dimension while the container is being built/recovered
+// (carrying a `provisioningPhase`). A container can be `provisioning` while its
+// instance is merely `starting` (initial boot) OR already `running` (a live
+// instance recovering/rebuilding its container) — UIs combine the two machines
+// via `displayStatus` / `isInstanceSelectable` below.
+//
+//   - "provisioning": container is being built / created / started
+//   - "running":      container is up and usable
+//   - "stopped":      container is not running (torn down / never started)
+export type ContainerStatus = "provisioning" | "running" | "stopped";
+
+// Instance-lifecycle transient states — the *instance itself* is coming up, so
+// it's worth waiting for / routing to. Container provisioning is intentionally
+// absent: it lives on the separate `ContainerStatus` machine, not here.
+export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "starting"]);
 
 export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "unloaded"]);
 
