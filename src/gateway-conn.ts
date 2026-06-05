@@ -29,7 +29,7 @@ export interface ConnInfo {
  * Sandbox/workspace container state machine — a separate dimension from the
  * instance lifecycle (see ContainerStatus). Grouped into its own object so the
  * two machines stay structurally distinct; `displayStatus` merges them only for
- * rendering. Absent when the instance has no live container info (e.g. unloaded).
+ * rendering. Absent when the instance has no live container info (e.g. idle).
  */
 export interface ContainerInfo {
   status: ContainerStatus;
@@ -44,6 +44,16 @@ export interface InstanceInfo {
   statusMessage?: string;
   // ── Container state machine (separate dimension) ──
   container?: ContainerInfo;
+  // ── Static metadata (read from disk by the gateway) ──
+  /**
+   * Whether the instance has a team manifest persisted on disk
+   * (`<instanceDir>/team/manifest.json`). This is *static* — read by the
+   * gateway from the filesystem, NOT a transient state. Picker uses it to
+   * route Enter on an `idle` instance to either restart (hasTeam=true) or
+   * the pack picker (hasTeam=false). Always present from gateway responses;
+   * `?` only because some legacy callers may not populate it.
+   */
+  hasTeam?: boolean;
 }
 
 export type ResolveResult =
@@ -112,14 +122,13 @@ export async function listInstances(conn: ConnInfo): Promise<InstanceInfo[]> {
 // Note tables, kept separate per state machine (the two are only combined at
 // render time, never in their definitions).
 const INSTANCE_STATUS_NOTE: Record<InstanceStatus, string> = {
-  idle: "空闲中 (无 team)",
+  idle: "未运行",
   preparing: "正在准备实例 (clone / 装依赖)...",
   starting: "正在启动 agents...",
   running: "运行中",
   stopping: "正在停止...",
   restarting: "正在重启...",
-  error: "初始化失败",
-  unloaded: "未加载",
+  error: "失败",
 };
 
 const CONTAINER_STATUS_NOTE: Record<ContainerStatus, string> = {
@@ -149,18 +158,18 @@ export function displayStatus(inst: InstanceView): DisplayStatus {
 }
 
 /**
- * Whether the picker may "enter" an instance. Only a live scheduler is
- * enterable:
+ * Whether the picker may "enter" an instance directly:
  *   - `running`: interactable (if its container is rebuilding underneath, it is
  *     still running, so still enterable — no separate container clause needed).
- *   - `idle`: selecting it routes to the team/pack picker branch.
- * Container `provisioning` is deliberately NOT a selectability factor on its
- * own: during initial boot the instance is `starting` (scheduler down) and must
- * stay non-enterable. Everything else (preparing/starting/stopping/restarting/
- * error/unloaded) is a disabled row.
+ *
+ * Everything else is a non-direct-entry row. `idle` (the stable "not running"
+ * state) and `error` are *restartable*, but the picker handles that via a
+ * separate restart action — see `RESTARTABLE_STATUSES` in the renderer. For
+ * `idle`, the renderer further inspects `hasTeam` to route Enter to either
+ * restart or the pack picker.
  */
 export function isInstanceSelectable(inst: { status: InstanceStatus }): boolean {
-  return inst.status === "running" || inst.status === "idle";
+  return inst.status === "running";
 }
 
 function instanceStatusNote(inst: InstanceInfo): string {
