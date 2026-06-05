@@ -173,11 +173,18 @@ export interface AgentTreeNode {
 
 // ─── Instance Status ───
 
-// Instance lifecycle ONLY. The sandbox/workspace container is a separate state
-// machine (`ContainerStatus`) — container/team provisioning is no longer an
-// instance status; the instance is simply `starting` while its container comes
-// up, and `running` once its scheduler is live (the container may still be
-// provisioning underneath — see ContainerStatus / docs/draft decoupling).
+// Instance lifecycle ONLY — describes the worker process state. Two orthogonal
+// dimensions are kept separate:
+//   - `ContainerStatus` (below): sandbox/workspace container, observable while
+//     the instance is `running`.
+//   - `InstanceMeta.hasTeam` (gateway-conn.ts): whether the instance has a
+//     team manifest on disk. Static, read by the gateway from the instance
+//     directory; NOT a transient state. Picker uses it to route Enter on an
+//     idle instance to either restart (hasTeam) or pack picker (!hasTeam).
+//
+// `idle` is the "no worker is running" terminal/initial state (instance exists
+// on disk but the worker process is not up). It covers: just-created, never
+// started, stopped, or auto-restart-exhausted-then-stopped.
 export type InstanceStatus =
   | "idle"
   // Instance-env provisioning: git clone + pnpm install, owned by the gateway
@@ -188,8 +195,7 @@ export type InstanceStatus =
   | "running"
   | "stopping"
   | "restarting"
-  | "error"
-  | "unloaded";
+  | "error";
 
 export type ProvisioningPhase =
   | "scaffolding"
@@ -227,11 +233,15 @@ export const PROVISIONING_PHASE_LABEL: Record<ProvisioningPhase, string> = {
 export type ContainerStatus = "provisioning" | "running" | "stopped";
 
 // Instance-lifecycle transient states — the *instance itself* is coming up, so
-// it's worth waiting for / routing to. Container provisioning is intentionally
-// absent: it lives on the separate `ContainerStatus` machine, not here.
-export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["idle", "preparing", "starting"]);
+// it's worth waiting for / routing to. `idle` is intentionally absent: it is
+// a stable "not-running" state, not a pending one. Container provisioning is
+// also absent: it lives on the separate `ContainerStatus` machine, not here.
+export const INSTANCE_STATUS_PENDING: ReadonlySet<InstanceStatus> = new Set(["preparing", "starting"]);
 
-export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "unloaded"]);
+// Stable states from which the picker offers a manual restart. Both `error`
+// (failed, possibly with crash-budget exhausted) and `idle` (cleanly stopped
+// or never started) are user-actionable here.
+export const INSTANCE_STATUS_TERMINAL: ReadonlySet<InstanceStatus> = new Set(["error", "idle"]);
 
 // ─── Command Protocol ───
 
