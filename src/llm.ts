@@ -54,3 +54,43 @@ export interface LLMToolCall {
   arguments: Record<string, unknown>;
   providerSidecarData?: ProviderSidecarData;
 }
+
+// ─── Tool schema (provider-side view of a tool) ──────────────────────────────
+//
+// Engine `ToolDefinition` carries runtime concerns (`execute(args, ctx)`,
+// `validateInput`, `compactResult`, …) that are bound to AgentContext and have
+// no place in a provider adapter. The provider only needs the parts that
+// describe the tool to the LLM API:
+//
+//   { name, description, input_schema }
+//
+// `ToolSchema` is exactly that subset. The engine's `ToolDefinition` extends
+// it, so passing `tools: ToolDefinition[]` to a provider call still type-checks
+// without forcing providers to import AgentContext.
+//
+// Add fields here ONLY if every provider needs them (e.g. JSON-schema fragment
+// the LLM API understands). Anything tied to runtime execution stays on
+// `ToolDefinition` in the engine.
+
+export interface ToolSchema {
+  name: string;
+  description: string;
+  /** JSON-Schema-shaped argument object. Field names mirror the OpenAI/Anthropic
+   *  tool-use shape so providers can pass it through with minimal massaging.
+   *  `properties` is `any`-typed because JSON-Schema fragments are
+   *  inherently dynamic — providers should not introspect this shape. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input_schema: {
+    type: "object";
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
+
+// ─── Model spec (catalog entry) ──────────────────────────────────────────────
+//
+// NOTE: intentionally NOT defined here yet. The engine has a richer
+// `ModelSpec` (input modalities, reasoning flag, context window) that is the
+// catalog source-of-truth, and providers don't need most of those fields. A
+// provider-side `ModelSpec` will be added when the provider extraction lands;
+// the engine spec stays in src/core/types.ts until then.
