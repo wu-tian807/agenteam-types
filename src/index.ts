@@ -40,3 +40,6 @@ export * from "./ansi.js";
 
 // ─── Media persistence ───
 export * from "./media-dir.js";
+
+// ─── Tiny shared utilities (sleep, …) ───
+export * from "./utils.js";
