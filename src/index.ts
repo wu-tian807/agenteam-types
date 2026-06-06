@@ -14,6 +14,9 @@ export * from "./types.js";
 // ─── Content utilities ───
 export * from "./content-utils.js";
 
+// ─── ContentPart with environment routing (host-private augment) ───
+export * from "./routed-content-part.js";
+
 // ─── Slash-command parser ───
 export * from "./command-parser.js";
 
