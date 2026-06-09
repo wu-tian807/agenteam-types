@@ -103,6 +103,10 @@ export interface CapabilitiesConfig {
   team?: "all" | "none";
   enable?: string[];
   disable?: string[];
+  /** ConsciousAgent-only: tools listed here are loaded + active for internal
+   *  dispatch (agent_command / batch / scheduler), but hidden from the LLM
+   *  schema. Same token format as enable/disable: bare_name | #pkg | pkg/kind/name. */
+  invisibleTools?: string[];
   config?: Record<string, Record<string, Record<string, unknown>>>;
 }
 
