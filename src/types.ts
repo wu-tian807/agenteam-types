@@ -66,14 +66,14 @@ export type ContentPart =
       type: "text";
       text: string;
     }
-  | { type: "text_file"; path: string; mimeType: string; inContainer?: boolean }
-  | { type: "file"; path: string; mimeType: string; inContainer?: boolean }
+  | { type: "text_file"; path: string; mimeType: string }
+  | { type: "file"; path: string; mimeType: string }
   | { type: "image"; data: string; mimeType: string; name?: string }
   | { type: "video"; data: string; mimeType: string; name?: string }
   | { type: "audio"; data: string; mimeType: string; name?: string }
-  | { type: "image_file"; path: string; mimeType: string; inContainer?: boolean }
-  | { type: "video_file"; path: string; mimeType: string; inContainer?: boolean }
-  | { type: "audio_file"; path: string; mimeType: string; inContainer?: boolean };
+  | { type: "image_file"; path: string; mimeType: string }
+  | { type: "video_file"; path: string; mimeType: string }
+  | { type: "audio_file"; path: string; mimeType: string };
 
 export type EventContent = string | ContentPart[];
 
@@ -82,13 +82,10 @@ export type InlineMediaContentPart = Extract<ContentPart, { type: "image" | "vid
 /**
  * Media content referenced by path (image_file / video_file / audio_file).
  *
- * ## Path ownership marker (`inContainer`)
- *
- * - `inContainer: true | undefined` (default) — path lives in the sandbox
- *   container's view. Consumers read via `sandboxFs`.
- *
- * - `inContainer: false` — path is a pure host path, unreachable from inside
- *   the container. Set explicitly for user-supplied host files, channel-side caches, etc.
+ * Baseline ContentPart is sandbox-agnostic — it carries no environment
+ * routing marker. Hosts that route between sandbox / host filesystems use
+ * `RoutedFileMediaContentPart` (see `routed-content-part.ts`), which extends
+ * this with the `RoutingMarker` interface (`inContainer?`).
  */
 export type FileMediaContentPart = Extract<ContentPart, { type: "image_file" | "video_file" | "audio_file" }>;
 
