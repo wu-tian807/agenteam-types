@@ -9,10 +9,10 @@
  *       marker so producers can declare which environment a path belongs to
  *       and the consuming `MediaReaders` impl can route accordingly.
  *
- *       Defined as a separate type, NOT folded into `ContentPart`, so that
- *       `@agenteam/providers` (which only ever sees `ContentPart` /
- *       `FilePathPart`) stays sandbox-agnostic. AgenTeam producers
- *       (renderer, wechat, …) type their literals against
+ *       The marker lives ONLY here — it is intentionally NOT part of
+ *       `ContentPart` so that `@agenteam/providers` (which only ever sees
+ *       `ContentPart` / `FilePathPart`) stays sandbox-agnostic. AgenTeam
+ *       producers (renderer, wechat, …) type their literals against
  *       `RoutedContentPart`; the host's `MediaReaders` (`media-storage.ts`
  *       in the engine) narrows incoming parts to `RoutedFilePathPart` to
  *       read the marker.
