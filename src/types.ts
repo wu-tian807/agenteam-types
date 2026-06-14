@@ -150,6 +150,9 @@ export interface AgentTeamConfig {
   sandbox?: {
     sshKeyPath?: string;
     sshPort?: number;
+    /** Master switch for the container stack (docker + sshfs + kernel tuning + sandbox SSH).
+     *  `true`/`false` = persisted user decision; `null`/absent = undecided → start.sh onboarding asks. */
+    containersEnabled?: boolean | null;
   };
   lang?: AgentTeamLang | null;
   prebuildMirror?: string;
