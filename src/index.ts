@@ -32,6 +32,9 @@ export * from "./hooks.js";
 // ─── Shared path utilities ───
 export * from "./state-dir.js";
 
+// ─── Unified key.json reader (optional deployment-time merged secret file) ───
+export * from "./key-merge.js";
+
 // ─── Gateway protocol client ───
 export * from "./gateway-conn.js";
 
